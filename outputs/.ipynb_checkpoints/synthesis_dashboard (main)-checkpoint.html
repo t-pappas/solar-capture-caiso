@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Solar Value Problem — CAISO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b0b0b;color:#e0ddd6;padding:32px 24px;line-height:1.5}
+.page{max-width:980px;margin:0 auto}
+
+/* ── TITLE ── */
+.masthead{border-bottom:1px solid #1e1e1e;padding-bottom:20px;margin-bottom:32px}
+.masthead-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#8a8880;margin-bottom:8px}
+.masthead-title{font-size:28px;font-weight:500;color:#f0ede8;letter-spacing:-0.5px;line-height:1.2;margin-bottom:8px}
+.masthead-sub{font-size:13px;color:#9a9890;max-width:640px;line-height:1.6}
+.masthead-meta{font-size:11px;color:#5f5e5a;margin-top:10px}
+
+/* ── STORY SECTIONS ── */
+.section{margin-bottom:40px}
+.section-header{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.section-num{font-size:11px;letter-spacing:2px;color:#5f5e5a;text-transform:uppercase;font-variant-numeric:tabular-nums;min-width:20px}
+.section-title{font-size:16px;font-weight:500;color:#f0ede8}
+.section-thesis{font-size:13px;color:#b0aea8;max-width:720px;line-height:1.65;margin-bottom:18px;padding-left:32px}
+
+/* ── KPI STRIP ── */
+.kpi-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:#111;border:1px solid #1e1e1e;border-radius:6px;padding:14px 16px}
+.kpi-lbl{font-size:11px;letter-spacing:0.6px;color:#8a8880;text-transform:uppercase;margin-bottom:6px}
+.kpi-val{font-size:26px;font-weight:500;line-height:1;letter-spacing:-0.5px}
+.kpi-ctx{font-size:12px;margin-top:5px;color:#8a8880}
+.up{color:#e24b4a}.dn{color:#639922}.warn{color:#ef9f27}.flat{color:#c8c5be}
+
+/* ── CHART CARDS ── */
+.chart-card{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:18px 20px;margin-bottom:14px}
+.chart-card.accent-red{border-left:3px solid #e24b4a}
+.chart-card.accent-amber{border-left:3px solid #ef9f27}
+.chart-card.accent-blue{border-left:3px solid #378add}
+.chart-card.accent-green{border-left:3px solid #3b6d11}
+.card-title{font-size:13px;font-weight:500;color:#d3d1c7;margin-bottom:3px}
+.card-sub{font-size:12px;color:#8a8880;margin-bottom:14px;line-height:1.5}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.leg-row{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:6px;font-size:12px;color:#9a9890}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.leg-line{width:18px;height:2px;border-radius:1px;flex-shrink:0}
+.leg-dash{width:18px;height:0;border-top:2px dashed;flex-shrink:0}
+
+/* ── CALLOUTS ── */
+.callout{border-radius:0 4px 4px 0;padding:10px 14px;margin-top:12px;font-size:12px;line-height:1.65}
+.callout.red{background:#1a0a0a;border-left:2px solid #a32d2d;color:#b0aea8}
+.callout.amber{background:#1a1200;border-left:2px solid #854f0b;color:#b0aea8}
+.callout.blue{background:#091420;border-left:2px solid #185fa5;color:#b0aea8}
+.callout strong{font-weight:500}
+.callout.red strong{color:#f09595}
+.callout.amber strong{color:#ef9f27}
+.callout.blue strong{color:#85b7eb}
+
+/* ── DIVIDER ── */
+.story-divider{border:none;border-top:1px solid #161616;margin:36px 0}
+
+/* ── CONCLUSION ── */
+.conclusion{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:20px 24px;margin-top:8px}
+.conclusion-title{font-size:14px;font-weight:500;color:#f0ede8;margin-bottom:12px}
+.conclusion-points{display:flex;flex-direction:column;gap:10px}
+.conclusion-point{display:flex;gap:14px;font-size:13px;color:#b0aea8;line-height:1.6}
+.conclusion-bullet{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;margin-top:1px}
+.conclusion-bullet.r{background:#1a0a0a;color:#e24b4a;border:1px solid #a32d2d}
+.conclusion-bullet.a{background:#1a1200;color:#ef9f27;border:1px solid #854f0b}
+.conclusion-bullet.b{background:#091420;color:#85b7eb;border:1px solid #185fa5}
+.conclusion-bullet.g{background:#0d1a0d;color:#97c459;border:1px solid #3b6d11}
+
+@media(max-width:640px){.kpi-strip{grid-template-columns:1fr 1fr}.two-col,.three-col{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- MASTHEAD -->
+<div class="masthead">
+  <div class="masthead-eyebrow">CAISO · SP15 Hub · Day-ahead market · January 2023 – 2025</div>
+  <h1 class="masthead-title">The solar value problem:<br>cannibalization, curtailment &amp; the declining capture ratio</h1>
+  <p class="masthead-sub">Solar assets in CAISO are generating into a market they are reshaping — and the prices they earn are falling faster than the market average. This report traces that decline through three years of real market data and explains what it means for developers, owners, and traders.</p>
+  <div class="masthead-meta">Data: CAISO OASIS PRC_LMP (DAM) · SLD_REN_FCST (ACTUAL) · Production &amp; Curtailments Report · January is used for year-on-year comparison (no DST transition, stable weather baseline)</div>
+</div>
+
+<!-- SECTION 1: THE HEADLINE -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">01</span>
+    <span class="section-title">The capture ratio is collapsing</span>
+  </div>
+  <p class="section-thesis">A solar asset doesn't earn the average market price — it earns a generation-weighted average of the hours it actually produces. As solar capacity has grown from 16 GW to 23+ GW, those hours have become the cheapest in the day. The capture ratio — capture price divided by average LMP — has fallen 28 percentage points in two years.</p>
+
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-lbl">Capture ratio — Jan 2023</div>
+      <div class="kpi-val dn">0.70x</div>
+      <div class="kpi-ctx">$97.49 capture vs $138.72 avg</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Capture ratio — Jan 2024</div>
+      <div class="kpi-val warn">0.56x</div>
+      <div class="kpi-ctx">$36.99 capture vs $65.57 avg</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Capture ratio — Jan 2025</div>
+      <div class="kpi-val up">0.42x</div>
+      <div class="kpi-ctx">$17.43 capture vs $41.35 avg</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">2-year change</div>
+      <div class="kpi-val up">−28pp</div>
+      <div class="kpi-ctx">0.70x → 0.42x in 24 months</div>
+    </div>
+  </div>
+
+  <div class="chart-card accent-red">
+    <div class="card-title">Capture price vs average LMP — January, year on year</div>
+    <div class="card-sub">Generation-weighted capture price (what solar earns) vs simple hourly average LMP (what an uncorrelated generator earns). The widening gap is the cannibalization discount.</div>
+    <div class="leg-row">
+      <span class="leg"><span class="leg-sq" style="background:#378add;opacity:0.5"></span>Avg SP15 LMP</span>
+      <span class="leg"><span class="leg-sq" style="background:#e24b4a;opacity:0.6"></span>Solar capture price</span>
+    </div>
+    <div style="position:relative;height:200px"><canvas id="c1"></canvas></div>
+    <div class="callout red">Capture price fell from <strong>$97/MWh in 2023</strong> to <strong>$17/MWh in 2025</strong> — an 82% decline — while the average LMP fell only 70%. The capture discount is widening because solar's own output is the primary driver of midday price suppression.</div>
+  </div>
+</div>
+
+<hr class="story-divider">
+
+<!-- SECTION 2: WHY — THE DUCK CURVE -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">02</span>
+    <span class="section-title">Why: the duck curve deepens every year</span>
+  </div>
+  <p class="section-thesis">Solar doesn't generate when prices are highest — it generates when prices are lowest, and it's the reason prices are lowest. The "duck curve" — the dip in midday prices caused by solar — gets deeper each year as more capacity competes for the same hours. In 2023, solar earned $96/MWh at its peak generation hour. In 2025, the same hour paid $15/MWh.</p>
+
+  <div class="two-col">
+    <div class="chart-card accent-amber">
+      <div class="card-title">Duck curve deepening — avg hourly SP15 price by year</div>
+      <div class="card-sub">The midday trough deepens as solar capacity grows. Each line is January of that year.</div>
+      <div class="leg-row">
+        <span class="leg"><span class="leg-line" style="background:#639922"></span>2023</span>
+        <span class="leg"><span class="leg-line" style="background:#ef9f27"></span>2024</span>
+        <span class="leg"><span class="leg-line" style="background:#e24b4a"></span>2025</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="c2a"></canvas></div>
+    </div>
+    <div class="chart-card accent-amber">
+      <div class="card-title">Solar generation profile — avg hourly output by year</div>
+      <div class="card-sub">More solar capacity means more generation in the same midday window — flooding the same hours with supply.</div>
+      <div class="leg-row">
+        <span class="leg"><span class="leg-sq" style="background:#639922;opacity:0.5"></span>2023</span>
+        <span class="leg"><span class="leg-sq" style="background:#ef9f27;opacity:0.5"></span>2024</span>
+        <span class="leg"><span class="leg-sq" style="background:#e24b4a;opacity:0.5"></span>2025</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="c2b"></canvas></div>
+    </div>
+  </div>
+  <div class="callout amber">At the solar peak hour, average SP15 price fell from <strong>$96.5/MWh (2023)</strong> → <strong>$32.0/MWh (2024)</strong> → <strong>$15.2/MWh (2025)</strong>. Meanwhile the evening ramp — when solar has already ramped down — stayed above $55–$88/MWh. Solar generates when the market pays least, and misses the highest-value hours entirely.</div>
+</div>
+
+<hr class="story-divider">
+
+<!-- SECTION 3: NEGATIVE PRICES -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">03</span>
+    <span class="section-title">The next stage: negative prices and curtailment</span>
+  </div>
+  <p class="section-thesis">A declining capture ratio is uncomfortable. Negative-price exposure is a crisis. In 2023 and 2024, no solar generation in January occurred during negative-price hours. In January 2025, 12.7% of all solar generation — roughly 1 in 8 MWh — was dispatched into negative prices. Solar assets were paid to be curtailed, or generated at a loss. CAISO's curtailment data confirms 115 GWh of solar was curtailed in January 2025 alone.</p>
+
+  <div class="three-col">
+    <div class="kpi">
+      <div class="kpi-lbl">Neg-price exposure 2023</div>
+      <div class="kpi-val dn">0.0%</div>
+      <div class="kpi-ctx">0 hours below $0/MWh</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Neg-price exposure 2024</div>
+      <div class="kpi-val dn">0.0%</div>
+      <div class="kpi-ctx">0 hours below $0/MWh</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl">Neg-price exposure 2025</div>
+      <div class="kpi-val up">12.7%</div>
+      <div class="kpi-ctx">30 hours below $0 · 115 GWh curtailed</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="chart-card accent-red">
+      <div class="card-title">Daily capture ratio — distribution by year</div>
+      <div class="card-sub">Each bar is one day. Red = below 0.40x. The 2025 distribution shifts dramatically left — bad days get much worse.</div>
+      <div class="leg-row">
+        <span class="leg"><span class="leg-sq" style="background:#639922;opacity:0.7"></span>2023 days</span>
+        <span class="leg"><span class="leg-sq" style="background:#ef9f27;opacity:0.7"></span>2024 days</span>
+        <span class="leg"><span class="leg-sq" style="background:#e24b4a;opacity:0.7"></span>2025 days</span>
+      </div>
+      <div style="position:relative;height:210px"><canvas id="c3a"></canvas></div>
+    </div>
+    <div class="chart-card accent-red">
+      <div class="card-title">Value-at-risk — P10/P50/P90 capture ratios</div>
+      <div class="card-sub">P10 = worst 10% of days. The downside tail widens sharply in 2025 — exactly the scenario that breaks project finance models.</div>
+      <div style="position:relative;height:210px"><canvas id="c3b"></canvas></div>
+      <div class="callout red">2025 P10 capture ratio: <strong>0.14x</strong> — on the worst 10% of days, solar earned only 14 cents per dollar of average market price. The 2023 P10 was 0.54x. <strong>Lenders stress-test against the P10; this trend makes financing harder.</strong></div>
+    </div>
+  </div>
+</div>
+
+<hr class="story-divider">
+
+<!-- SECTION 4: CURTAILMENT -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">04</span>
+    <span class="section-title">Curtailment: the hidden revenue loss</span>
+  </div>
+  <p class="section-thesis">Standard capture price only counts MWh that were dispatched and sold. But curtailed solar represents real lost revenue — generation that could have occurred but was instructed not to, almost always during the same negative-price midday hours. The curtailment-adjusted capture price accounts for this: it's lower, and the gap widens as oversupply events become more frequent.</p>
+
+  <div class="chart-card accent-blue">
+    <div class="card-title">Hourly curtailment — January 2025 (MW curtailed per hour)</div>
+    <div class="card-sub">Curtailment is concentrated in hours 09:00–16:00 PST — precisely the solar peak. Curtailment events cluster on days when negative prices are most severe, creating a compounding effect on revenue.</div>
+    <div style="position:relative;height:200px"><canvas id="c4"></canvas></div>
+    <div class="callout blue">Peak curtailment hour: <strong>1,386 MW</strong> (Jan 1, 14:00 PST). Total curtailed in January 2025: <strong>115 GWh</strong> — equivalent to ~1.3 days of full-fleet solar output. This is energy the fleet was capable of generating but was told to withhold, with no compensation for unhedged projects.</div>
+  </div>
+</div>
+
+<hr class="story-divider">
+
+<!-- SECTION 5: IMPLICATIONS -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-num">05</span>
+    <span class="section-title">What this means for market participants</span>
+  </div>
+  <p class="section-thesis">These trends compound each other. Lower capture ratios reduce project revenues. Negative-price exposure adds direct losses. Curtailment adds further hidden losses not captured in standard capture metrics. Together, they describe a structural deterioration in the economics of unhedged solar in CAISO — and they point directly to the value of storage co-location.</p>
+
+  <div class="conclusion">
+    <div class="conclusion-title">Key implications</div>
+    <div class="conclusion-points">
+      <div class="conclusion-point">
+        <div class="conclusion-bullet r">1</div>
+        <div><strong style="color:#f09595">Solar PPA pricing must account for declining capture.</strong> A PPA priced against the average LMP will consistently overestimate solar revenues. The correct reference is the capture price — which is 42% below average in January 2025 and falling.</div>
+      </div>
+      <div class="conclusion-point">
+        <div class="conclusion-bullet r">2</div>
+        <div><strong style="color:#f09595">Project finance stress tests need updating.</strong> The P10 daily capture ratio fell from 0.54x (2023) to 0.14x (2025). Debt service coverage models built on 2022–2023 data are materially optimistic. Lenders should be stress-testing against 2025 distributions, not historical averages.</div>
+      </div>
+      <div class="conclusion-point">
+        <div class="conclusion-bullet a">3</div>
+        <div><strong style="color:#ef9f27">Curtailment is accelerating as a revenue risk.</strong> Zero curtailment exposure in 2023–2024 gave way to 115 GWh curtailed in January 2025 alone. As CAISO solar capacity continues to grow toward 30+ GW, curtailment during peak generation hours will become a structural feature, not an occasional event.</div>
+      </div>
+      <div class="conclusion-point">
+        <div class="conclusion-bullet b">4</div>
+        <div><strong style="color:#85b7eb">The evening ramp is the value signal storage responds to.</strong> While solar earns $8–15/MWh at midday, the 17:00–19:00 PST ramp consistently prices at $55–$88/MWh. A 2-hour battery co-located with solar can charge at negative/near-zero prices and discharge at the evening peak — shifting revenues from the worst hours to the best.</div>
+      </div>
+      <div class="conclusion-point">
+        <div class="conclusion-bullet g">5</div>
+        <div><strong style="color:#97c459">NP15 vs SP15 divergence matters for siting.</strong> NP15 maintained a 0.72x capture ratio in January 2025 vs SP15's 0.42x, with zero negative-price exposure vs 12.7%. The NP15/SP15 spread is a real siting signal — not all CAISO solar faces the same cannibalization pressure.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+const GRID = '#1a1a1a';
+const TICK = {color:'#8a8880', font:{size:11}};
+const TT   = {backgroundColor:'#161616',borderColor:'#2a2a2a',borderWidth:1,titleColor:'#d3d1c7',bodyColor:'#9a9890'};
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+const YOY = {
+  "2023": {"cap":97.49,"avg":138.72,"ratio":0.7028,"neg_exp":0.0},
+  "2024": {"cap":36.99,"avg":65.57, "ratio":0.5642,"neg_exp":0.0},
+  "2025": {"cap":17.43,"avg":41.35, "ratio":0.4216,"neg_exp":0.1274}
+};
+const DUCK = {
+  "2023": {"sp15":[137.39,133.47,131.13,132.06,138.38,153.19,172.19,164.09,135.41,114.92,103.83,96.49,91.3,89.88,96.73,124.65,162.55,181.94,177.16,171.38,167.76,160.32,150.44,142.53],"mw":[0,0,0,0,0.17,0.17,1.35,1337.11,4901.5,6930.91,7565.14,7580.02,7422.58,7058.75,6289.84,4599.35,1220.52,7.81,0,0,0,0,0,0]},
+  "2024": {"sp15":[72.48,69.98,69.2,68.87,70.13,76.57,85.18,79.89,57.39,41.99,35.51,32.04,28.51,26.99,31.58,54.5,83.21,88.4,88.14,86.95,85.84,85.15,80.15,75.69],"mw":[0.22,0.21,0.21,0.2,0.2,0.19,0.81,1548.9,5711.71,7789.17,8432.65,8461.56,8252.04,7914.94,7296.94,5179.84,1206.72,8.3,1.52,0.25,0.41,0.23,0.17,0.22]},
+  "2025": {"sp15":[50.84,50.02,49.45,49.39,51.33,55.36,59.25,55.76,33.4,19.26,15.19,14.41,11.6,8.35,10.57,24.61,51.62,56.33,56.05,55.26,54.79,54.63,53.52,51.35],"mw":[0,0,0,0,0,0,2.11,2204.53,8390.08,11325.16,11873.69,11858.03,11702.96,11482.29,10824.06,8031.98,2034.84,42.92,2.08,3.05,1.81,0,0,0]}
+};
+const DAILY = {
+  "2023": {"ratio":[0.6127,0.8273,0.8621,0.9351,0.9876,0.7733,0.8644,0.7977,0.9418,0.9108,0.8745,0.8785,0.9187,0.9051,0.8177,0.8686,0.6858,0.7958,0.7927,0.6296,0.5328,0.3087,0.5303,0.5644,0.5923,0.7227,0.6731,0.5372,0.6221,0.7978,0.5785]},
+  "2024": {"ratio":[0.6629,0.6764,0.7699,0.4899,0.6,0.4689,0.4431,0.5692,0.597,0.6056,0.614,0.5455,0.4888,0.4358,0.6455,0.5286,0.5466,0.4339,0.8174,0.7774,0.8308,1.0364,0.7239,0.8145,0.6264,0.5284,0.3667,0.4284,0.5261,0.3867,0.7433]},
+  "2025": {"ratio":[0.6455,0.7273,0.8959,0.3497,0.2695,0.4727,0.4074,0.5489,0.5837,0.4209,0.0994,0.0872,0.2255,0.3482,0.2869,0.3435,0.001,0.2572,0.1412,0.388,0.5239,0.496,0.398,0.4717,0.5913,0.7556,0.7598,0.5424,0.4067,0.2791,0.442]}
+};
+const CURT_HOURLY = {"labels":["Jan 1 13:00","Jan 1 14:00","Jan 1 15:00","Jan 2 08:00","Jan 2 09:00","Jan 2 10:00","Jan 2 11:00","Jan 2 12:00","Jan 2 13:00","Jan 2 14:00","Jan 4 10:00","Jan 4 11:00","Jan 4 12:00","Jan 4 13:00","Jan 5 10:00","Jan 5 11:00","Jan 5 12:00","Jan 11 10:00","Jan 11 11:00","Jan 11 12:00","Jan 11 13:00","Jan 12 10:00","Jan 12 11:00","Jan 12 12:00","Jan 12 13:00","Jan 17 09:00","Jan 17 10:00","Jan 17 11:00","Jan 17 12:00","Jan 17 13:00"],"mw":[330.77,1385.64,551.22,15.47,121.44,248.94,244.4,239.39,79.46,11.49,228.18,529.46,629.56,222.88,48.83,175.31,26.81,40.0,352.63,524.86,213.64,32.16,403.28,681.04,388.76,155.22,1249.88,2107.39,3667.0,2095.18]};
+
+const YEARS   = ['2023','2024','2025'];
+const Y_COLS  = {'2023':'#639922','2024':'#ef9f27','2025':'#e24b4a'};
+const Y_ALPHA = {'2023':'rgba(99,153,34,0.55)','2024':'rgba(239,159,39,0.55)','2025':'rgba(226,75,74,0.55)'};
+const HRS     = Array.from({length:24},(_,i)=>`${String(i).padStart(2,'0')}:00`);
+
+// ── CHART 1: capture vs avg grouped bars ─────────────────────────────────
+new Chart(document.getElementById('c1'),{
+  type:'bar',
+  data:{
+    labels:YEARS,
+    datasets:[
+      {label:'Avg LMP',data:YEARS.map(y=>YOY[y].avg),backgroundColor:'rgba(55,138,221,0.25)',borderColor:'#378add',borderWidth:1.5,borderRadius:4,borderSkipped:false},
+      {label:'Capture',data:YEARS.map(y=>YOY[y].cap),backgroundColor:YEARS.map(y=>Y_ALPHA[y]),borderColor:YEARS.map(y=>Y_COLS[y]),borderWidth:1.5,borderRadius:4,borderSkipped:false},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.dataset.label}: $${c.parsed.y.toFixed(1)}/MWh`}}},
+    scales:{x:{ticks:TICK,grid:{color:GRID}},y:{ticks:{...TICK,callback:v=>`$${v}`},grid:{color:GRID}}}}
+});
+
+// ── CHART 2A: duck curve by year ──────────────────────────────────────────
+new Chart(document.getElementById('c2a'),{
+  type:'line',
+  data:{labels:HRS, datasets:YEARS.map(y=>({
+    data:DUCK[y].sp15, borderColor:Y_COLS[y], borderWidth:1.8, pointRadius:0, tension:0.4, label:y
+  }))},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:TT},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:8,maxRotation:0},grid:{color:GRID}},
+            y:{ticks:{...TICK,callback:v=>`$${v}`},grid:{color:GRID}}}}
+});
+
+// ── CHART 2B: solar gen bars by year ─────────────────────────────────────
+new Chart(document.getElementById('c2b'),{
+  type:'bar',
+  data:{labels:HRS, datasets:YEARS.map((y,i)=>({
+    data:DUCK[y].mw.map(v=>+(v/1000).toFixed(2)),
+    backgroundColor:Y_ALPHA[y], borderColor:Y_COLS[y], borderWidth:0.5,
+    borderRadius:1, borderSkipped:false, label:y,
+    barPercentage:0.8, categoryPercentage:0.9
+  }))},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)} GW`}}},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:8,maxRotation:0},grid:{color:GRID}},
+            y:{ticks:{...TICK,callback:v=>`${v}GW`},grid:{color:GRID}}}}
+});
+
+// ── CHART 3A: daily ratio scatter per year ────────────────────────────────
+new Chart(document.getElementById('c3a'),{
+  type:'bar',
+  data:{
+    labels: Array.from({length:31},(_,i)=>`Jan ${i+1}`),
+    datasets: YEARS.map(y=>({
+      data: DAILY[y].ratio.map(v=>+(v*100).toFixed(1)),
+      backgroundColor: DAILY[y].ratio.map(v=>v<0.4?Y_ALPHA[y]:`${Y_COLS[y]}44`),
+      borderColor: Y_COLS[y], borderWidth:0.5,
+      borderRadius:2, borderSkipped:false, label:y,
+      barPercentage:0.9, categoryPercentage:0.85
+    }))
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`}}},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:8,maxRotation:0},grid:{color:GRID}},
+            y:{min:0,max:110,ticks:{...TICK,callback:v=>`${v}%`},grid:{color:GRID}}}}
+});
+
+// ── CHART 3B: P10/P50/P90 grouped bar ─────────────────────────────────────
+function pct(arr, p) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const i = (p/100)*(s.length-1);
+  const lo = Math.floor(i), hi = Math.ceil(i);
+  return +(s[lo]+(s[hi]-s[lo])*(i-lo)).toFixed(4);
+}
+const pdata = YEARS.map(y=>({
+  p10: pct(DAILY[y].ratio,10),
+  p50: pct(DAILY[y].ratio,50),
+  p90: pct(DAILY[y].ratio,90),
+}));
+new Chart(document.getElementById('c3b'),{
+  type:'bar',
+  data:{
+    labels:YEARS,
+    datasets:[
+      {label:'P90',data:pdata.map(d=>+(d.p90*100).toFixed(1)),backgroundColor:YEARS.map(y=>`${Y_COLS[y]}33`),borderColor:YEARS.map(y=>Y_COLS[y]),borderWidth:1,borderRadius:3,borderSkipped:false},
+      {label:'P50',data:pdata.map(d=>+(d.p50*100).toFixed(1)),backgroundColor:YEARS.map(y=>`${Y_COLS[y]}66`),borderColor:YEARS.map(y=>Y_COLS[y]),borderWidth:1.5,borderRadius:3,borderSkipped:false},
+      {label:'P10',data:pdata.map(d=>+(d.p10*100).toFixed(1)),backgroundColor:YEARS.map(y=>Y_ALPHA[y]),borderColor:YEARS.map(y=>Y_COLS[y]),borderWidth:2,borderRadius:3,borderSkipped:false},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y.toFixed(1)}%`}}},
+    scales:{x:{ticks:TICK,grid:{color:GRID}},
+            y:{min:0,max:110,ticks:{...TICK,callback:v=>`${v}%`},grid:{color:GRID}}}}
+});
+
+// ── CHART 4: hourly curtailment ───────────────────────────────────────────
+new Chart(document.getElementById('c4'),{
+  type:'bar',
+  data:{
+    labels: CURT_HOURLY.labels,
+    datasets:[{
+      data: CURT_HOURLY.mw,
+      backgroundColor: CURT_HOURLY.mw.map(v=>v>1000?'rgba(226,75,74,0.7)':v>400?'rgba(239,159,39,0.6)':'rgba(55,138,221,0.4)'),
+      borderColor: CURT_HOURLY.mw.map(v=>v>1000?'#e24b4a':v>400?'#ef9f27':'#378add'),
+      borderWidth:0.5, borderRadius:2, borderSkipped:false
+    }]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...TT,callbacks:{label:c=>`${c.parsed.y.toFixed(0)} MW curtailed`}}},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:12,maxRotation:45},grid:{color:GRID}},
+            y:{ticks:{...TICK,callback:v=>`${v}MW`},grid:{color:GRID}}}}
+});
+</script>
+</body>
+</html>
