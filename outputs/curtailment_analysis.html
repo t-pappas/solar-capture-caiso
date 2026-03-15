@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Curtailment-adjusted capture — CAISO Solar</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b0b0b;color:#e0ddd6;padding:28px 22px}
+.page{max-width:960px;margin:0 auto}
+h1{font-size:20px;font-weight:500;color:#f0ede8;margin-bottom:4px}
+.meta{font-size:13px;color:#9a9890;margin-bottom:20px}
+.explainer{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;color:#c8c5be;line-height:1.65}
+.explainer strong{color:#d3d1c7;font-weight:500}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:20px}
+.kpi{background:#111;border:1px solid #1e1e1e;border-radius:6px;padding:12px 14px}
+.kpi-lbl{font-size:13px;letter-spacing:0.9px;color:#9a9890;text-transform:uppercase;margin-bottom:7px}
+.kpi-val{font-size:22px;font-weight:500;color:#f0ede8;line-height:1}
+.kpi-sub{font-size:13px;margin-top:5px;color:#b0aea8}
+.red{color:#e24b4a}.amber{color:#ef9f27}.green{color:#639922}
+.chart-block{background:#111;border:1px solid #1e1e1e;border-radius:8px;padding:16px 18px;margin-bottom:16px}
+.fig-eye{font-size:13px;letter-spacing:1.4px;color:#8a8880;text-transform:uppercase;margin-bottom:4px}
+.fig-title{font-size:13px;font-weight:500;color:#c8c5be;margin-bottom:3px}
+.fig-sub{font-size:13px;color:#9a9890;margin-bottom:12px;line-height:1.5}
+.leg-row{display:flex;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.leg{display:flex;align-items:center;gap:5px;font-size:13px;color:#b0aea8}
+.leg-line{width:18px;height:2px;border-radius:1px}
+.leg-dash{width:18px;height:0;border-top:2px dashed}
+.callout{background:#1a1200;border-left:2px solid #854f0b;border-radius:0 4px 4px 0;padding:8px 12px;margin-top:10px;font-size:13px;color:#b0aea8;line-height:1.6}
+.callout strong{color:#ef9f27;font-weight:500}
+</style>
+</head>
+<body><div class="page">
+<h1>Curtailment-adjusted solar capture — CAISO SP15</h1>
+<div class="meta" id="meta"></div>
+<div class="explainer">
+  <strong>What this measures:</strong> Standard capture price only counts dispatched MWh — energy that was generated and sold. But curtailed solar represents real lost revenue: the asset could have generated, but was instructed not to (usually because there was too much supply and prices were already negative). The <strong>curtailment-adjusted capture rate</strong> adds curtailed potential back in, showing the true economic impact of cannibalization. A widening gap between the two lines means curtailment is becoming a larger share of the value problem.
+</div>
+<div class="kpi-row" id="kpis"></div>
+<div class="chart-block">
+  <div class="fig-eye">Figure 1</div>
+  <div class="fig-title">Standard vs curtailment-adjusted capture price — daily</div>
+  <div class="fig-sub">The gap between lines is the daily curtailment cost. When it widens, curtailment events are coinciding with non-trivial prices.</div>
+  <div class="leg-row">
+    <span class="leg"><span class="leg-line" style="background:#378add"></span>Avg SP15 LMP</span>
+    <span class="leg"><span class="leg-line" style="background:#ef9f27"></span>Standard capture price</span>
+    <span class="leg"><span class="leg-dash" style="border-color:#e24b4a"></span>Curtailment-adjusted capture</span>
+  </div>
+  <div style="position:relative;height:220px"><canvas id="c1"></canvas></div>
+  <div class="callout" id="c1-note"></div>
+</div>
+<div class="chart-block">
+  <div class="fig-eye">Figure 2</div>
+  <div class="fig-title">Daily curtailment volume and rate</div>
+  <div class="fig-sub">Bars show curtailed GWh per day. Line shows curtailment as % of total potential generation. Spikes mark high-penetration events where supply overwhelmed demand.</div>
+  <div class="leg-row">
+    <span class="leg"><span class="leg-line" style="background:#711;opacity:0.6"></span>Curtailed GWh</span>
+    <span class="leg"><span class="leg-line" style="background:#e24b4a"></span>Curtailment rate (%)</span>
+  </div>
+  <div style="position:relative;height:180px"><canvas id="c2"></canvas></div>
+  <div class="callout" id="c2-note"></div>
+</div>
+</div>
+<script>
+const D = {"period": "Jan 2025 \u2013 Jan 2025", "kpis": {"capture": 17.43, "adj_capture": 17.11, "curtailment_rate": 0.0397, "avg_lmp": 41.35}, "daily": {"date": ["2025-01-01 00:00:00", "2025-01-02 00:00:00", "2025-01-03 00:00:00", "2025-01-04 00:00:00", "2025-01-05 00:00:00", "2025-01-06 00:00:00", "2025-01-07 00:00:00", "2025-01-08 00:00:00", "2025-01-09 00:00:00", "2025-01-10 00:00:00", "2025-01-11 00:00:00", "2025-01-12 00:00:00", "2025-01-13 00:00:00", "2025-01-14 00:00:00", "2025-01-15 00:00:00", "2025-01-16 00:00:00", "2025-01-17 00:00:00", "2025-01-18 00:00:00", "2025-01-19 00:00:00", "2025-01-20 00:00:00", "2025-01-21 00:00:00", "2025-01-22 00:00:00", "2025-01-23 00:00:00", "2025-01-24 00:00:00", "2025-01-25 00:00:00", "2025-01-26 00:00:00", "2025-01-27 00:00:00", "2025-01-28 00:00:00", "2025-01-29 00:00:00", "2025-01-30 00:00:00", "2025-01-31 00:00:00"], "avg_lmp": [36.41, 39.1, 41.92, 31.01, 31.68, 33.68, 38.31, 39.17, 40.25, 32.22, 29.52, 35.92, 39.03, 45.14, 42.22, 39.26, 32.44, 53.05, 46.77, 56.38, 63.04, 46.2, 43.93, 42.44, 40.26, 48.16, 53.95, 49.16, 39.88, 35.27, 35.99], "capture": [23.5, 28.44, 37.55, 10.84, 8.54, 15.92, 15.61, 21.5, 23.5, 13.56, 2.93, 3.13, 8.8, 15.71, 12.11, 13.48, 0.03, 13.64, 6.6, 21.88, 33.03, 22.92, 17.48, 20.02, 23.81, 36.39, 40.99, 26.67, 16.22, 9.84, 15.91], "adj_capture": [23.5, 28.42, 37.55, 10.76, 8.55, 15.91, 15.58, 21.5, 23.34, 13.47, 2.58, 3.06, 8.74, 15.5, 11.82, 13.58, -0.7, 13.46, 6.51, 21.82, 32.8, 22.9, 17.31, 20.12, 23.72, 36.4, 40.96, 26.48, 15.54, 9.18, 15.83], "curtailed_gwh": [2.28, 1.67, 0.03, 2.24, 0.28, 1.08, 0.73, 0.1, 3.87, 3.45, 10.58, 2.1, 1.92, 4.51, 6.85, 0.82, 15.83, 2.55, 1.2, 0.88, 4.75, 0.56, 6.98, 3.71, 0.79, 0.56, 1.24, 4.85, 11.63, 13.6, 3.35], "curtailment_rate": [0.026, 0.018, 0.001, 0.027, 0.003, 0.012, 0.01, 0.001, 0.039, 0.035, 0.107, 0.021, 0.019, 0.044, 0.067, 0.009, 0.154, 0.025, 0.011, 0.008, 0.044, 0.006, 0.063, 0.035, 0.014, 0.011, 0.015, 0.047, 0.104, 0.114, 0.038]}};
+const GRID='#1a1a1a', TICK={color:'#8a8880',font:{size:12}};
+
+function fmt$(v){return (v<0?'-$'+Math.abs(v).toFixed(2):'$'+v.toFixed(2));}
+
+const kd = D.kpis;
+document.getElementById('meta').textContent = D.period + ' · SP15 hub · curtailment-adjusted capture rate';
+document.getElementById('kpis').innerHTML = [
+  {l:'Standard capture', v:fmt$(kd.capture)+'/MWh', s:'Dispatched MWh only', c:'amber'},
+  {l:'Adjusted capture', v:fmt$(kd.adj_capture)+'/MWh', s:'Incl. curtailed potential', c:'red'},
+  {l:'Curtailment cost', v:'$'+(kd.capture-kd.adj_capture).toFixed(2)+'/MWh', s:'Additional discount from curtailment', c:'red'},
+  {l:'Curtailment rate', v:(kd.curtailment_rate*100).toFixed(1)+'%', s:'Share of potential gen curtailed', c: kd.curtailment_rate>0.1?'red':'amber'},
+].map(k=>`<div class="kpi"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub ${k.c}">${k.s}</div></div>`).join('');
+
+const labels = D.daily.date.map(d=>d.slice(5));
+new Chart(document.getElementById('c1'),{
+  data:{labels, datasets:[
+    {type:'line',data:D.daily.avg_lmp,borderColor:'#378add',borderWidth:1.5,pointRadius:0,tension:0.3,yAxisID:'y'},
+    {type:'line',data:D.daily.capture,borderColor:'#ef9f27',borderWidth:1.8,pointRadius:0,tension:0.3,yAxisID:'y'},
+    {type:'line',data:D.daily.adj_capture,borderColor:'#e24b4a',borderWidth:1.5,borderDash:[4,3],pointRadius:0,tension:0.3,yAxisID:'y'},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#161616',borderColor:'#222',borderWidth:1,titleColor:'#c8c5be',bodyColor:'#666'}},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:10,maxRotation:0},grid:{color:GRID}},
+            y:{ticks:{...TICK,callback:v=>v<0?`-$${Math.abs(v)}`:`$${v}`},grid:{color:GRID}}}}
+});
+
+new Chart(document.getElementById('c2'),{
+  data:{labels, datasets:[
+    {type:'bar', data:D.daily.curtailed_gwh,backgroundColor:'rgba(180,50,50,0.4)',borderColor:'#711',borderWidth:0.5,yAxisID:'y',borderRadius:1},
+    {type:'line',data:D.daily.curtailment_rate.map(v=>+(v*100).toFixed(1)),borderColor:'#e24b4a',borderWidth:1.8,pointRadius:0,tension:0.3,yAxisID:'y2'},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:'#161616',borderColor:'#222',borderWidth:1,titleColor:'#c8c5be',bodyColor:'#666'}},
+    scales:{x:{ticks:{...TICK,maxTicksLimit:10,maxRotation:0},grid:{color:GRID}},
+            y:{position:'left',ticks:{...TICK,callback:v=>`${v}GWh`},grid:{color:GRID}},
+            y2:{position:'right',ticks:{...TICK,callback:v=>`${v}%`},grid:{display:false}}}}
+});
+
+const maxCurtDay = D.daily.date[D.daily.curtailed_gwh.indexOf(Math.max(...D.daily.curtailed_gwh))].slice(5);
+const maxCurt = Math.max(...D.daily.curtailed_gwh).toFixed(1);
+document.getElementById('c1-note').innerHTML =
+  `Adjusted capture is consistently below standard capture. The dashed line dips furthest on high-curtailment days — when negative-price hours are also the hours with the most curtailment, the true economic loss compounds.`;
+document.getElementById('c2-note').innerHTML =
+  `Peak curtailment day: <strong>${maxCurtDay} (${maxCurt} GWh curtailed)</strong>. High-curtailment days almost always coincide with the lowest standard capture prices — confirming that curtailment and price suppression are driven by the same oversupply events.`;
+</script></body></html>

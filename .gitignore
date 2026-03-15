@@ -1,0 +1,18 @@
+# Data files — download locally with download_data.py
+data/raw/*.csv
+data/processed/*.csv
+data/yoy/*.csv
+data/raw/*.xlsx
+
+# Keep the directory structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/yoy/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+
+# macOS
+.DS_Store
